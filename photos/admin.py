@@ -1,10 +1,10 @@
 from django.contrib import admin
-
+from unfold.admin import ModelAdmin
 from photos.models import Photo
 
 
 @admin.register(Photo)
-class PhotoAdmin(admin.ModelAdmin):
+class PhotoAdmin(ModelAdmin):
     list_display = ['location', 'date_of_publication', 'tagged_pets_list']
 
     @staticmethod
