@@ -1,5 +1,8 @@
+from django.core.paginator import Paginator
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, redirect, resolve_url
+from django.views.generic import ListView
 from pyperclip import copy
 
 from common.forms import SearchForm, CommentForm
@@ -7,19 +10,40 @@ from common.models import Like
 from photos.models import Photo
 
 
-def home_page_view(request: HttpRequest) -> HttpResponse:
-    all_photos = Photo.objects.prefetch_related('tagged_pets', 'like_set').order_by('-date_of_publication')
-    form = SearchForm(request.GET or None)
+class HomeView(ListView):
+    queryset = Photo.objects.prefetch_related('tagged_pets', 'like_set').order_by('-date_of_publication')
+    context_object_name = "all_photos"
+    paginate_by = 1
+    template_name = "common/home-page.html"
 
-    if form.is_valid():
-        searched_name = form.cleaned_data['pet_name']
-        all_photos = all_photos.filter(tagged_pets__name__icontains=searched_name)
+    def get_queryset(self) -> QuerySet:
+        qs = super().get_queryset()
+        pet_name = self.request.GET.get('pet_name')
 
-    context = {
-        "all_photos": all_photos,
-    }
+        if pet_name:
+            qs = qs.filter(tagged_pets__name__icontains=pet_name)
 
-    return render(request, 'common/home-page.html', context)
+        return qs
+
+
+# def home_page_view(request: HttpRequest) -> HttpResponse:
+#     all_photos = Photo.objects.prefetch_related('tagged_pets', 'like_set').order_by('-date_of_publication')
+#     form = SearchForm(request.GET or None)
+#
+#     if form.is_valid():
+#         searched_name = form.cleaned_data['pet_name']
+#         all_photos = all_photos.filter(tagged_pets__name__icontains=searched_name)
+#
+#     per_page = 2
+#     paginator = Paginator(all_photos, per_page)
+#     page_number = request.GET.get('page') or 1 # http://127.0.0.1/?page=1
+#     all_photos = paginator.page(page_number)
+#
+#     context = {
+#         "all_photos": all_photos,
+#     }
+#
+#     return render(request, 'common/home-page.html', context)
 
 
 def like_functionality_view(request: HttpRequest, photo_id: int) -> HttpResponse:
