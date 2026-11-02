@@ -1,15 +1,23 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.views.generic import UpdateView, DeleteView
 
+from common.mixins import CheckIsOwnerMixin
 from photos.forms import PhotoAddForm, PhotoEditForm
 from photos.models import Photo
 
 
+@login_required
 def photo_add_view(request: HttpRequest) -> HttpResponse:
     form = PhotoAddForm(request.POST or None, request.FILES or None)
 
     if form.is_valid():
-        form.save()
+        photo = form.save(commit=False)
+        photo.user = request.user
+        photo.save()
         return redirect('common:home')
 
     context = {
@@ -31,22 +39,18 @@ def photo_details_view(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, 'photos/photo-details-page.html', context)
 
 
-def photo_edit_view(request: HttpRequest, pk: int) -> HttpResponse:
-    photo = get_object_or_404(Photo, pk=pk)
-    form = PhotoEditForm(request.POST or None, request.FILES or None, instance=photo)
+class PhotoEditView(LoginRequiredMixin, CheckIsOwnerMixin, UpdateView):
+    model = Photo
+    form_class = PhotoEditForm
+    template_name = 'photos/photo-edit-page.html'
 
-    if form.is_valid():
-        form.save()
-        return redirect('photos:details', photo.pk)
-
-    context = {
-        'form': form,
-    }
-
-    return render(request, 'photos/photo-edit-page.html', context)
+    def get_success_url(self) -> str:
+        return reverse(
+            'photos:details',
+            kwargs={"pk": self.object.pk},
+        )
 
 
-def photo_delete_view(request: HttpRequest, pk: int) -> HttpResponse:
-    photo = get_object_or_404(Photo, pk=pk)
-    photo.delete()
-    return redirect('common:home')
+class PhotoDeleteView(LoginRequiredMixin, CheckIsOwnerMixin, DeleteView):
+    model = Photo
+    success_url = reverse_lazy('common:home')

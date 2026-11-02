@@ -179,3 +179,13 @@
 .step-links a:hover {
     text-shadow: none;
 }
+
+.button {
+    background-color: white;
+    border: none;
+    font-size: 22px;
+    font-family: "Open Sans", sans-serif;
+    margin: 2.5px 0px 0px 8px;
+    padding: 0;
+    cursor: pointer;
+}
