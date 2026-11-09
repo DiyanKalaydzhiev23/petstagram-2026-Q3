@@ -1,0 +1,45 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    container_name: petstagram_web
+    restart: always
+    command: gunicorn petstagram.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    depends_on:
+      - db
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgres://postgres:admin@db:5432/myproject
+
+
+  db:
+    image: postgres:16
+    container_name: petstagram_db
+    restart: always
+    environment:
+      POSTGRES_DB: petstagram_2026_q3
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+
+  nginx:
+    image: nginx:latest
+    container_name: petstagram_nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/app/staticfiles
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - web
+
+
+volumes:
+  postgres_data:
+  static_volume:
