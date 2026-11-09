@@ -71,6 +71,11 @@ class Migration(migrations.Migration):
         ("photos", "0001_initial"),
     ]
 
+    # Seed rows before Pet.user exists, so they get a real owner assigned in pets.0002.
+    run_before = [
+        ("pets", "0002_pet_user"),
+    ]
+
     operations = [
         migrations.RunPython(populate, depopulate),
     ]
